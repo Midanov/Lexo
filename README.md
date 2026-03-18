@@ -65,3 +65,11 @@ La app está dividida en dos partes:
 ### [0.1] - 2026-03-17
 #### ✨ Añadido
 * Estructura base del proyecto y primer commit. Implementación de base json.
+
+- Se actualizó y depuró el código para permitir la conexión con la API del diccionario.
+- Se habilitó la obtención de información en línea para las nuevas palabras agregadas por el usuario.
+- Se integró una animación al momento de agregar palabras.
+- Se actualizó el logo a una versión con mejor calidad (menos borroso).
+- Se añadió un test funcional.
+- Se implementó la funcionalidad de **Text-to-Speech (TTS)**.
+
