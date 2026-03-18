@@ -1,15 +1,27 @@
 package com.example.lexo
 
+import android.os.Build
 import android.os.Bundle
 import android.webkit.WebView
+import android.webkit.WebResourceRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.webkit.WebViewAssetLoader
 import androidx.webkit.WebViewClientCompat
-import android.webkit.WebResourceRequest
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var ttsBridge: TTSBridge   // ← AGREGADO
+    // ── Bridges ────────────────────────────────────────────────
+    private lateinit var ttsBridge: TTSBridge
+    private lateinit var notifBridge: NotificationBridge
+
+    // ── Permiso de notificaciones (Android 13+) ────────────────
+    private val requestNotifPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) {
+                // Se concedió el permiso — JS decide cuándo programar notificaciones
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -17,15 +29,23 @@ class MainActivity : AppCompatActivity() {
         val webView = WebView(this)
         setContentView(webView)
 
-        webView.settings.javaScriptEnabled = true
-        webView.settings.domStorageEnabled = true
-        webView.settings.allowFileAccess = true                     // ← AGREGADO
-        webView.settings.mediaPlaybackRequiresUserGesture = false   // ← AGREGADO
+        // ── Configuración WebView ──────────────────────────────
+        webView.settings.apply {
+            javaScriptEnabled = true
+            domStorageEnabled = true
+            allowFileAccess = true
+            allowContentAccess = true
+            mediaPlaybackRequiresUserGesture = false
+        }
 
-        // 🔊 Inicializar TTS
-        ttsBridge = TTSBridge(this)                                 // ← AGREGADO
-        webView.addJavascriptInterface(ttsBridge, "AndroidTTS")     // ← AGREGADO
+        // ── Inicializar bridges ────────────────────────────────
+        ttsBridge = TTSBridge(this)
+        notifBridge = NotificationBridge(this)
 
+        webView.addJavascriptInterface(ttsBridge, "AndroidTTS")
+        webView.addJavascriptInterface(notifBridge, "NotificationBridge")
+
+        // ── Asset Loader (mejor práctica en vez de file://) ────
         val assetLoader = WebViewAssetLoader.Builder()
             .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
             .build()
@@ -37,10 +57,18 @@ class MainActivity : AppCompatActivity() {
             ) = assetLoader.shouldInterceptRequest(request.url)
         }
 
+        // ── Cargar app ─────────────────────────────────────────
         webView.loadUrl("https://appassets.androidplatform.net/assets/Lexo.html")
+
+        // ── Pedir permiso Android 13+ ──────────────────────────
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestNotifPermission.launch(
+                android.Manifest.permission.POST_NOTIFICATIONS
+            )
+        }
     }
 
-    override fun onDestroy() {   // ← AGREGADO
+    override fun onDestroy() {
         super.onDestroy()
         ttsBridge.shutdown()
     }

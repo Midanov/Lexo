@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Lexo</string>
+    <string name="widget_description">Muestra tus palabras pendientes y racha de Lexo</string>
 </resources>

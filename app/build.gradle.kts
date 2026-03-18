@@ -47,4 +47,8 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     implementation("androidx.webkit:webkit:1.10.0")
+
+    // WorkManager — notificaciones programadas
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+
 }

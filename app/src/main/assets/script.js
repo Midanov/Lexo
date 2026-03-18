@@ -99,6 +99,83 @@ function idbGetAll(idb){
   });
 }
 
+// ══════════════════════════════════════════════════
+//  INDEXEDDB — image cache
+// ══════════════════════════════════════════════════
+const IDB_IMG_NAME='lexo_img_v1', IDB_IMG_STORE='cache';
+let imgIDB=null;
+const IMG_TTL=7*24*3600*1000; // 7 days
+
+async function openImgIDB(){
+  if(imgIDB)return imgIDB;
+  return new Promise((res,rej)=>{
+    const req=indexedDB.open(IDB_IMG_NAME,1);
+    req.onupgradeneeded=e=>{
+      const d=e.target.result;
+      if(!d.objectStoreNames.contains(IDB_IMG_STORE))
+        d.createObjectStore(IDB_IMG_STORE,{keyPath:'w'});
+    };
+    req.onsuccess=e=>{imgIDB=e.target.result;res(imgIDB);};
+    req.onerror=e=>rej(e.target.error);
+  });
+}
+async function imgCacheGet(word){
+  try{
+    const idb=await openImgIDB();
+    return new Promise(res=>{
+      const req=idb.transaction(IDB_IMG_STORE,'readonly').objectStore(IDB_IMG_STORE).get(word);
+      req.onsuccess=e=>{
+        const r=e.target.result;
+        if(!r)return res(undefined);
+        if(Date.now()-r.ts>IMG_TTL)return res(undefined);
+        res(r.url);
+      };
+      req.onerror=()=>res(undefined);
+    });
+  }catch(e){return undefined;}
+}
+async function imgCacheSet(word,url){
+  try{
+    const idb=await openImgIDB();
+    return new Promise(res=>{
+      const tx=idb.transaction(IDB_IMG_STORE,'readwrite');
+      tx.objectStore(IDB_IMG_STORE).put({w:word,url,ts:Date.now()});
+      tx.oncomplete=res;tx.onerror=res;
+    });
+  }catch(e){}
+}
+
+// Returns image URL string, null (no image), or undefined (cache miss→fetch)
+async function getWordImageUrl(word){
+  const cached=await imgCacheGet(word);
+  if(cached!==undefined)return cached; // null = confirmed no image
+  let url=null;
+  try{
+    const r=await fetchWithTimeout(
+      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(word)}`,
+      {method:'GET'},6000);
+    if(r.ok){
+      const data=await r.json();
+      const desc=(data.description||'').toLowerCase();
+      const irrelevant=/\b(film|album|song|singer|actor|footballer|politician|band|tv series|novel|book|manga)\b/;
+      if(!irrelevant.test(desc)){
+        url=data.thumbnail?.source||null;
+      }
+    }
+  }catch(e){}
+  await imgCacheSet(word,url);
+  return url;
+}
+
+// Async: fetches image and injects it into a placeholder already in the DOM
+async function loadImageInto(word,wrapId,imgId){
+  const url=await getWordImageUrl(word);
+  if(!url)return;
+  const wrap=document.getElementById(wrapId);
+  const img=document.getElementById(imgId);
+  if(wrap&&img){img.src=url;img.onerror=()=>{wrap.style.display='none';};wrap.style.display='block';}
+}
+
 async function loadLibrary(idb){
   const count=await idbCount(idb);
   if(count>0){LIB=await idbGetAll(idb);LIB_READY=true;return;}
@@ -153,7 +230,15 @@ async function init(){
   document.getElementById('fab').style.display='flex';
   showScreen('home');
 }
-function persist(){localStorage.setItem('lexo_db',JSON.stringify(db));}
+function persist(){
+  localStorage.setItem('lexo_db',JSON.stringify(db));
+  if(window.NotificationBridge&&typeof NotificationBridge.syncStats==='function'){
+    try{
+      const due=db.words.filter(isDue).length;
+      NotificationBridge.syncStats(db.words.length,due,db.streak||0);
+    }catch(e){}
+  }
+}
 
 // ══════════════════════════════════════════════════
 //  NAVIGATION
@@ -291,6 +376,9 @@ function renderFlashcard(){
   document.getElementById('study-hint-lbl').textContent=hl>0?hlL[hl]:'';
   const score=ms(w),msCol=score>=8?'var(--teal-l)':score>=5?'var(--amber-l)':'#F0997B';
   let html=`<div class="card" style="margin-bottom:10px;">
+    <div id="flash-img-wrap" style="display:none;margin-bottom:10px;">
+      <img id="flash-img" class="word-img" src="" alt="${esc(w.word)}" onerror="this.parentElement.style.display='none'">
+    </div>
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
       <div><div class="flash-word">${esc(w.word)}</div>
       <div class="flash-pos">${esc(w.partOfSpeech||'')}</div></div>
@@ -336,6 +424,7 @@ function renderFlashcard(){
   </div>`;
   document.getElementById('flash-content').innerHTML=html;
   document.getElementById('flash-content').scrollTop=0;
+  loadImageInto(w.word,'flash-img-wrap','flash-img');
 }
 function hintLevel(w){
   if((w.apps||0)===0)return 0;
@@ -734,21 +823,7 @@ function showDetail(id){
       <button class="btn" style="flex:1;background:#2d1515;border:0.5px solid #993C1D;color:#F0997B;" onclick="deleteWord('${w.id}')">Eliminar</button>
     </div>`;
   document.getElementById('detail-overlay').classList.add('open');
-  // Load image async from Wikipedia
-  fetchWordImage(w.word);
-}
-async function fetchWordImage(word){
-  try{
-    const res=await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(word)}`);
-    if(!res.ok)return;
-    const data=await res.json();
-    const imgUrl=data.thumbnail?.source||data.originalimage?.source;
-    if(imgUrl){
-      const wrap=document.getElementById('word-img-wrap');
-      const img=document.getElementById('word-img');
-      if(wrap&&img){img.src=imgUrl;wrap.style.display='block';}
-    }
-  }catch(e){}
+  loadImageInto(w.word,'word-img-wrap','word-img');
 }
 function closeDetail(){document.getElementById('detail-overlay').classList.remove('open');}
 function deleteWord(id){
@@ -906,6 +981,9 @@ async function generateCard(){
   document.getElementById('add-preview').innerHTML=`
     <div class="card" style="margin-bottom:0;">
       ${offlineNote}
+      <div id="prev-img-wrap" style="display:none;margin-bottom:10px;">
+        <img id="prev-img" class="word-img" src="" alt="${esc(pendingCard.word)}" onerror="this.parentElement.style.display='none'">
+      </div>
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
         <div>
           <div style="font-size:26px;font-weight:700;">${esc(pendingCard.word)}</div>
@@ -931,6 +1009,7 @@ async function generateCard(){
       </div>
     </div>`;
   document.getElementById('save-actions').style.display='flex';
+  loadImageInto(pendingCard.word,'prev-img-wrap','prev-img');
 }
 function showAddError(msg){
   document.getElementById('add-error').style.display='';
@@ -954,9 +1033,83 @@ function openSettings(){
   document.getElementById('s-sessions').textContent=db.totalSessions||0;
   document.getElementById('s-streak').textContent=(db.streak||0)+' días';
   document.getElementById('s-games').textContent=db.totalGames||0;
+  // Inject notification section once
+  if(!document.getElementById('notif-section')){
+    const modal=document.querySelector('#settings-overlay .modal');
+    const danger=modal?.querySelector('[style*="border-top"]');
+    if(modal){
+      const sec=document.createElement('div');
+      sec.id='notif-section';
+      sec.innerHTML=`
+        <div class="divider"></div>
+        <h3 style="margin-bottom:10px;">Notificaciones</h3>
+        <div class="card-sm" style="margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <span style="font-size:13px;color:var(--text2);">Recordatorio diario</span>
+            <label style="position:relative;width:40px;height:22px;cursor:pointer;">
+              <input type="checkbox" id="notif-enabled" onchange="toggleNotif(this.checked)"
+                style="opacity:0;width:0;height:0;position:absolute;">
+              <span id="notif-track" style="position:absolute;inset:0;background:var(--border);border-radius:11px;transition:background .2s;"></span>
+              <span id="notif-thumb" style="position:absolute;width:16px;height:16px;top:3px;left:3px;background:#fff;border-radius:50%;transition:transform .2s;"></span>
+            </label>
+          </div>
+          <label style="margin-top:0;">Hora del recordatorio</label>
+          <input type="time" id="notif-time" value="09:00" onchange="updateNotifTime()">
+        </div>`;
+      if(danger)modal.insertBefore(sec,danger);else modal.appendChild(sec);
+      // Toggle thumb visual
+      document.getElementById('notif-enabled').addEventListener('change',function(){
+        const on=this.checked;
+        document.getElementById('notif-track').style.background=on?'var(--teal)':'var(--border)';
+        document.getElementById('notif-thumb').style.transform=on?'translateX(18px)':'translateX(0)';
+      });
+    }
+  }
+  // Restore saved settings
+  const enabled=localStorage.getItem('lexo_notif_enabled')==='true';
+  const time=localStorage.getItem('lexo_notif_time')||'09:00';
+  const cb=document.getElementById('notif-enabled');
+  const ti=document.getElementById('notif-time');
+  if(cb){
+    cb.checked=enabled;
+    document.getElementById('notif-track').style.background=enabled?'var(--teal)':'var(--border)';
+    document.getElementById('notif-thumb').style.transform=enabled?'translateX(18px)':'translateX(0)';
+  }
+  if(ti)ti.value=time;
   document.getElementById('settings-overlay').classList.add('open');
 }
 function closeSettings(){document.getElementById('settings-overlay').classList.remove('open');}
+function toggleNotif(enabled){
+  localStorage.setItem('lexo_notif_enabled',enabled);
+  const time=document.getElementById('notif-time')?.value||'09:00';
+  if(enabled){
+    const[h,m]=time.split(':').map(Number);
+    scheduleNotif(h,m);
+    showToast('Notificaciones activadas ✓');
+  }else{
+    cancelNotif();
+    showToast('Notificaciones desactivadas');
+  }
+}
+function updateNotifTime(){
+  const time=document.getElementById('notif-time')?.value||'09:00';
+  localStorage.setItem('lexo_notif_time',time);
+  if(document.getElementById('notif-enabled')?.checked){
+    const[h,m]=time.split(':').map(Number);
+    scheduleNotif(h,m);
+    showToast('Hora actualizada ✓');
+  }
+}
+function scheduleNotif(hour,minute){
+  if(window.NotificationBridge&&typeof NotificationBridge.scheduleDaily==='function'){
+    try{NotificationBridge.scheduleDaily(hour,minute);}catch(e){}
+  }
+}
+function cancelNotif(){
+  if(window.NotificationBridge&&typeof NotificationBridge.cancelDaily==='function'){
+    try{NotificationBridge.cancelDaily();}catch(e){}
+  }
+}
 function resetApp(){
   if(!confirm('¿Borrar TODOS los datos? No se puede deshacer.'))return;
   localStorage.removeItem('lexo_db');location.reload();
