@@ -65,3 +65,18 @@ La app está dividida en dos partes:
 ### [0.1] - 2026-03-17
 #### ✨ Añadido
 * Estructura base del proyecto y primer commit. Implementación de base json.
+
+- Se actualizó y depuró el código para permitir la conexión con la API del diccionario.
+- Se habilitó la obtención de información en línea para las nuevas palabras agregadas por el usuario.
+- Se integró una animación al momento de agregar palabras.
+- Se actualizó el logo a una versión con mejor calidad (menos borroso).
+- Se añadió un test funcional.
+- Se implementó la funcionalidad de **Text-to-Speech (TTS)**.
+
+## 📅 2026-03-18
+ 
+ 
+- Integración con API de **Wikipedia** para enriquecer palabras con imágenes (con sistema de caché y validación de relevancia).
+- Implementación de **notificaciones push** para fomentar el hábito diario y mejorar el engagement.
+- Desarrollo de **widget móvil** para visualizar progreso y acceder rápidamente a sesiones de estudio. (pendiente de validación)
+
