@@ -76,7 +76,7 @@ La app está dividida en dos partes:
 ## 📅 2026-03-18
  
  
-- Integración con API de **Wikipedia** para enriquecer palabras con imágenes (con sistema de caché y validación de relevancia).
+- Integración con API de **Wikipedia** para enriquecer palabras con imágenes (con sistema de caché y validación de relevancia). (No sirve, arreglar)
 - Implementación de **notificaciones push** para fomentar el hábito diario y mejorar el engagement.
-- Desarrollo de **widget móvil** para visualizar progreso y acceder rápidamente a sesiones de estudio. (pendiente de validación)
+- Desarrollo de **widget móvil** para visualizar progreso y acceder rápidamente a sesiones de estudio. (pendiente de validación) (No sirve, arreglar)
 
