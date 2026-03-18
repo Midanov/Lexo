@@ -73,3 +73,10 @@ La app está dividida en dos partes:
 - Se añadió un test funcional.
 - Se implementó la funcionalidad de **Text-to-Speech (TTS)**.
 
+## 📅 2026-03-18
+ 
+ 
+- Integración con API de **Wikipedia** para enriquecer palabras con imágenes (con sistema de caché y validación de relevancia).
+- Implementación de **notificaciones push** para fomentar el hábito diario y mejorar el engagement.
+- Desarrollo de **widget móvil** para visualizar progreso y acceder rápidamente a sesiones de estudio. (pendiente de validación)
+
