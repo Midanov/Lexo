@@ -301,7 +301,7 @@ function renderFlashcard(){
     </div>`;
   if(w.ipa)html+=`<div class="ipa-row">
     <span class="muted" style="flex:1;font-size:13px;">${esc(w.ipa)}</span>
-    <button class="play-btn" onclick="speak('${esc(w.word)}','en')">▶</button></div>`;
+    <button class="play-btn" onclick="speak('${esc(w.word)}','en',this)">▶</button></div>`;
   html+='<div class="divider"></div>';
   if(hl>0)html+=`<span class="hint-badge">${hlL[hl]}</span><br>`;
   if(hl===0){
@@ -319,7 +319,7 @@ function renderFlashcard(){
   html+=`<div><div class="tiny" style="margin-bottom:4px;">Ejemplo</div>
     <div class="example-row">
       <span class="example-text">"${esc(w.example||'—')}"</span>
-      <button class="audio-btn" onclick="speak('${esc(w.example||w.word).replace(/'/g,"\\'")}','en')" title="Escuchar ejemplo">
+      <button class="audio-btn" onclick="speak('${esc(w.example||w.word).replace(/'/g,"\\'")}','en',this)" title="Escuchar ejemplo">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>
       </button>
     </div></div></div>`;
@@ -708,7 +708,7 @@ function showDetail(id){
     </div>
     ${w.ipa?`<div class="ipa-row" style="margin-bottom:12px;">
       <span style="flex:1;color:var(--text2);font-size:13px;">${esc(w.ipa)}</span>
-      <button class="play-btn" onclick="speak('${esc(w.word)}','en')">▶</button></div>`:''}
+      <button class="play-btn" onclick="speak('${esc(w.word)}','en',this)">▶</button></div>`:''}
     <div style="margin-bottom:10px;"><div class="tiny">Traducción</div>
       <div style="color:var(--amber-l);font-weight:500;font-size:14px;margin-top:2px;">${esc(w.translation||'—')}</div></div>
     <div style="margin-bottom:10px;"><div class="tiny">Significado</div>
@@ -716,7 +716,7 @@ function showDetail(id){
     <div style="margin-bottom:12px;"><div class="tiny" style="margin-bottom:4px;">Ejemplo</div>
       <div class="example-row">
         <span class="example-text">"${esc(w.example||'—')}"</span>
-        <button class="audio-btn" onclick="speak('${esc(w.example||w.word).replace(/'/g,"\\'")}','en')" title="Escuchar ejemplo">
+        <button class="audio-btn" onclick="speak('${esc(w.example||w.word).replace(/'/g,"\\'")}','en',this)" title="Escuchar ejemplo">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>
         </button>
       </div>
@@ -918,14 +918,14 @@ async function generateCard(){
       </div>
       ${pendingCard.ipa?`<div class="ipa-row" style="margin-bottom:8px;">
         <span style="flex:1;color:var(--text2);font-size:13px;">${esc(pendingCard.ipa)}</span>
-        <button class="play-btn" onclick="speak('${esc(pendingCard.word)}','en')">▶</button></div>`:''}
+        <button class="play-btn" onclick="speak('${esc(pendingCard.word)}','en',this)">▶</button></div>`:''}
       <div style="margin-bottom:6px;"><div class="tiny">Traducción</div>
         <div style="color:var(--amber-l);font-weight:500;font-size:14px;margin-top:2px;">${esc(pendingCard.translation)}</div></div>
       <div class="divider"></div>
       <div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:6px;">${esc(pendingCard.definition)}</div>
       <div class="example-row">
         <span class="example-text">"${esc(pendingCard.example)}"</span>
-        <button class="audio-btn" onclick="speak('${esc(pendingCard.example).replace(/'/g,"\\'")}','en')">
+        <button class="audio-btn" onclick="speak('${esc(pendingCard.example).replace(/'/g,"\\'")}','en',this)">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>
         </button>
       </div>
@@ -983,12 +983,60 @@ function estimateFreq(w){
   if(w.length<=9)return Math.floor(Math.random()*3000)+800;
   return Math.floor(Math.random()*8000)+3000;
 }
-function speak(text,lang='en'){
-  if(!window.speechSynthesis)return;
-  const u=new SpeechSynthesisUtterance(text);
-  u.lang=lang==='en'?'en-US':'es-ES';u.rate=0.88;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(u);
+function speak(text, lang, btn){
+  lang = lang||'en';
+  const setBtn=(on)=>{
+    if(!btn)return;
+    btn.disabled=!on; btn.style.opacity=on?'1':'0.45';
+    btn.style.background=on?'':btn.style.background;
+  };
+  setBtn(false);
+
+  // ── Android native TTS bridge (most reliable) ─────────────────────
+  if(window.AndroidTTS && typeof AndroidTTS.speak==='function'){
+    try{
+      if(lang==='en') AndroidTTS.speak(text);
+      else            AndroidTTS.speakEs(text);
+      setTimeout(()=>setBtn(true), 500);
+      return;
+    }catch(e){ console.warn('AndroidTTS error:',e); }
+  }
+
+  // ── Web Speech API fallback (Chrome desktop, some WebViews) ───────
+  if(!window.speechSynthesis){
+    setBtn(true);
+    showToast('Activa TTS en Ajustes → Accesibilidad → Texto a voz');
+    return;
+  }
+  const doSpeak=()=>{
+    window.speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang=lang==='en'?'en-US':'es-ES'; u.rate=0.85; u.pitch=1;
+    const voices=window.speechSynthesis.getVoices();
+    if(voices.length){
+      const pick=lang==='en'
+        ?voices.find(v=>v.lang==='en-US'&&v.localService)
+          ||voices.find(v=>v.lang.startsWith('en-')&&v.localService)
+          ||voices.find(v=>v.lang.startsWith('en-'))
+        :voices.find(v=>v.lang==='es-ES'&&v.localService)
+          ||voices.find(v=>v.lang.startsWith('es-'));
+      if(pick)u.voice=pick;
+    }
+    u.onstart=()=>{ if(btn){btn.style.background='var(--amber-d)';} };
+    const reset=()=>setBtn(true);
+    u.onend=reset; u.onerror=reset;
+    window.speechSynthesis.speak(u);
+  };
+  const voices=window.speechSynthesis.getVoices();
+  if(!voices.length){
+    let done=false;
+    window.speechSynthesis.onvoiceschanged=()=>{
+      if(done)return; done=true;
+      window.speechSynthesis.onvoiceschanged=null;
+      doSpeak();
+    };
+    setTimeout(()=>{ if(!done){done=true;doSpeak();} },700);
+  }else{ doSpeak(); }
 }
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
