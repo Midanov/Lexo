@@ -13,7 +13,8 @@ const CAT_LABELS = ['','Cotidiano','Tecnología','Negocios','Finanzas','Viajes',
 // ══════════════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════════════
-let LIB = [];  // word library — loaded from IndexedDB / words.json
+let LIB = [];        // word library — loaded from IndexedDB / words.json
+let LIB_READY = false;
 let db = {words:[],streak:0,lastStudyDate:null,totalSessions:0,totalGames:0};
 let pendingCard=null;
 let sessionQueue=[],sessionIdx=0,sessionStats={good:0,bad:0};
@@ -100,7 +101,7 @@ function idbGetAll(idb){
 
 async function loadLibrary(idb){
   const count=await idbCount(idb);
-  if(count>0){LIB=await idbGetAll(idb);return;}
+  if(count>0){LIB=await idbGetAll(idb);LIB_READY=true;return;}
   // First run: load words.json
   showLoadingScreen('Cargando vocabulario… (solo la primera vez)');
   try{
@@ -115,6 +116,7 @@ async function loadLibrary(idb){
     console.warn('words.json load failed:',err.message);
     LIB=[];
   }
+  LIB_READY=true;
   hideLoadingScreen();
 }
 
@@ -654,25 +656,28 @@ async function renderExplore(){
     : `<div class="tiny" style="text-align:center;padding:12px 0 20px;">— ${total} palabras mostradas —</div>`;
 
   const list = document.getElementById('explore-list');
-  if(!libLoaded){list.innerHTML='<div class="empty" style="padding:40px;"><div class="spinner"></div><div style="margin-top:12px;">Cargando vocabulario...</div></div>';return;}
   list.innerHTML = statsHtml + (listHtml || '<div class="empty">Sin resultados para este filtro.</div>') + moreHtml;
 }
 
-async function addSuggestedWord(wordStr){
-  await ensureLib();
-  const entry = LIB.find(e=>e[0]===wordStr);
+function addSuggestedWord(wordStr){
+  const entry = LIB.find(e=>e.w===wordStr);
   if(!entry || db.words.some(w=>w.word===wordStr)) return;
   db.words.push({
     id: Date.now().toString()+Math.random().toString(36).slice(2),
-    word: entry[0], translation: entry[1],
+    word: entry.w, translation: entry.t,
     definition: '', ipa: '', example: '',
-    partOfSpeech: entry[3]==='v'?'verb':entry[3]==='n'?'noun':entry[3]==='a'?'adjective':'word',
-    cefr: CEFR_CODES[entry[2]], freq: estimateFreq(entry[0]),
-    category: CAT_NAMES[entry[4]],
+    partOfSpeech: entry.p==='v'?'verb':entry.p==='n'?'noun':entry.p==='a'?'adjective':entry.p==='d'?'adverb':'word',
+    cefr: CEFR_CODES[entry.l], freq: estimateFreq(entry.w),
+    category: CAT_NAMES[entry.c],
     masteryScore:1, apps:0, interval:1, easeFactor:2.5,
     nextReview: new Date().toISOString()
   });
   persist(); renderExplore(); refreshHome();
+  // FAB feedback
+  const fab=document.getElementById('fab');
+  fab.textContent='✓'; fab.style.background='var(--teal)';
+  setTimeout(()=>{ fab.textContent='+'; fab.style.background='var(--amber)'; }, 1400);
+  showToast(`"${entry.w}" agregada ✓`);
 }
 
 
@@ -819,11 +824,21 @@ async function generateCard(){
   document.getElementById('add-error').style.display='none';
   document.getElementById('add-actions').style.display='none';
   document.getElementById('save-actions').style.display='none';
+
+  // ── 1. Check local library first (fast, offline) ─────────────────
+  const libEntry=LIB_READY?LIB.find(e=>e.w===word):null;
+
+  // ── 2. Try dictionary API (may fail on Android WebView / offline) ─
+  let definition='',ipa='',example='',partOfSpeech='word';
+  let apiOnline=false;
   try{
-    const dictRes=await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
-    let definition='',ipa='',example='',partOfSpeech='word';
+    const dictRes=await fetchWithTimeout(
+      `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`,
+      {method:'GET'},8000);
     if(dictRes.ok){
-      const data=await dictRes.json();const entry=data[0];
+      apiOnline=true;
+      const data=await dictRes.json();
+      const entry=data[0];
       const phonetic=entry.phonetics?.find(p=>p.text)||{};
       ipa=phonetic.text||'';
       const meaning=entry.meanings?.[0];
@@ -834,57 +849,88 @@ async function generateCard(){
         example=def?.example||'';
       }
     }
-    // Smart example: use context if provided, fallback to real example, then generate
-    example=example||generateExample(word,partOfSpeech,ctx);
-    let translation='';
-    try{
-      const trRes=await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|es`);
-      const trData=await trRes.json();
-      translation=trData.responseData?.translatedText||'';
-      if(translation.toLowerCase()===word.toLowerCase())translation='';
-    }catch(e){}
-    const cefr=estimateCEFR(word);const freq=estimateFreq(word);
-    if(!definition&&!translation)throw new Error(`No se encontró "${word}". Verifica la ortografía (solo palabras en inglés).`);
-    pendingCard={
-      id:Date.now().toString(),word,translation:translation||'—',
-      definition:definition||`The word "${word}".`,
-      ipa,example,partOfSpeech,cefr,freq,category:cat,
-      masteryScore:1,apps:0,interval:1,easeFactor:2.5,
-      nextReview:new Date().toISOString()
-    };
-    document.getElementById('add-preview').style.display='block';
-    document.getElementById('add-preview').innerHTML=`
-      <div class="card" style="margin-bottom:0;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
-          <div>
-            <div style="font-size:26px;font-weight:700;">${esc(pendingCard.word)}</div>
-            <div style="color:var(--amber);font-size:12px;font-weight:500;">${esc(pendingCard.partOfSpeech)}</div>
-          </div>
-          <div style="text-align:right;">
-            <span class="cefr cefr-${pendingCard.cefr.toLowerCase()}">${pendingCard.cefr}</span>
-            <div class="tiny" style="margin-top:2px;">${pendingCard.category}</div>
-          </div>
-        </div>
-        ${pendingCard.ipa?`<div class="ipa-row" style="margin-bottom:8px;">
-          <span style="flex:1;color:var(--text2);font-size:13px;">${esc(pendingCard.ipa)}</span>
-          <button class="play-btn" onclick="speak('${esc(pendingCard.word)}','en')">▶</button></div>`:''}
-        <div style="margin-bottom:6px;"><div class="tiny">Traducción</div>
-          <div style="color:var(--amber-l);font-weight:500;font-size:14px;margin-top:2px;">${esc(pendingCard.translation)}</div></div>
-        <div class="divider"></div>
-        <div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:6px;">${esc(pendingCard.definition)}</div>
-        <div class="example-row">
-          <span class="example-text">"${esc(pendingCard.example)}"</span>
-          <button class="audio-btn" onclick="speak('${esc(pendingCard.example).replace(/'/g,"\\'")}','en')">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>
-          </button>
-        </div>
-      </div>`;
-    document.getElementById('save-actions').style.display='flex';
-  }catch(err){
-    showAddError(err.message);
-    document.getElementById('add-actions').style.display='flex';
+  }catch(dictErr){
+    console.warn('Dictionary API error:',dictErr.message);
   }
+
+  // ── 3. Try translation API ───────────────────────────────────────
+  let translation=libEntry?libEntry.t:'';
+  if(!translation){
+    try{
+      const trRes=await fetchWithTimeout(
+        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|es`,
+        {method:'GET'},8000);
+      if(trRes.ok){
+        const trData=await trRes.json();
+        const raw=(trData.responseData?.translatedText||'').trim();
+        if(raw&&raw.toLowerCase()!==word.toLowerCase()&&
+           raw.toUpperCase()!==raw&&
+           !raw.includes('MYMEMORY')&&raw.length<=80){
+          translation=raw;
+        }
+      }
+    }catch(trErr){
+      console.warn('MyMemory API error:',trErr.message);
+    }
+  }
+
   document.getElementById('add-loading').style.display='none';
+
+  // ── 4. If still nothing usable, infer from LIB or bail ───────────
+  if(!definition&&!translation&&!libEntry){
+    showAddError(`No se encontró "${word}". Verifica la ortografía (solo palabras en inglés).`);
+    document.getElementById('add-actions').style.display='flex';
+    return;
+  }
+
+  // Fill in gaps with local data
+  if(libEntry){
+    if(!partOfSpeech||partOfSpeech==='word')
+      partOfSpeech=libEntry.p==='v'?'verb':libEntry.p==='n'?'noun':libEntry.p==='a'?'adjective':libEntry.p==='d'?'adverb':'word';
+  }
+  example=example||generateExample(word,partOfSpeech,ctx);
+  const cefr=libEntry?CEFR_CODES[libEntry.l]:estimateCEFR(word);
+  const freq=estimateFreq(word);
+  const offlineNote=!apiOnline?'<div style="font-size:11px;color:var(--amber-l);margin-bottom:8px;">⚠ Sin conexión — tarjeta generada sin definición en línea</div>':'';
+
+  pendingCard={
+    id:Date.now().toString(),word,
+    translation:translation||'—',
+    definition:definition||`The word "${word}".`,
+    ipa,example,partOfSpeech,cefr,freq,category:cat,
+    masteryScore:1,apps:0,interval:1,easeFactor:2.5,
+    nextReview:new Date().toISOString()
+  };
+
+  document.getElementById('add-preview').style.display='block';
+  document.getElementById('add-preview').innerHTML=`
+    <div class="card" style="margin-bottom:0;">
+      ${offlineNote}
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+        <div>
+          <div style="font-size:26px;font-weight:700;">${esc(pendingCard.word)}</div>
+          <div style="color:var(--amber);font-size:12px;font-weight:500;">${esc(pendingCard.partOfSpeech)}</div>
+        </div>
+        <div style="text-align:right;">
+          <span class="cefr cefr-${pendingCard.cefr.toLowerCase()}">${pendingCard.cefr}</span>
+          <div class="tiny" style="margin-top:2px;">${pendingCard.category}</div>
+        </div>
+      </div>
+      ${pendingCard.ipa?`<div class="ipa-row" style="margin-bottom:8px;">
+        <span style="flex:1;color:var(--text2);font-size:13px;">${esc(pendingCard.ipa)}</span>
+        <button class="play-btn" onclick="speak('${esc(pendingCard.word)}','en')">▶</button></div>`:''}
+      <div style="margin-bottom:6px;"><div class="tiny">Traducción</div>
+        <div style="color:var(--amber-l);font-weight:500;font-size:14px;margin-top:2px;">${esc(pendingCard.translation)}</div></div>
+      <div class="divider"></div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:6px;">${esc(pendingCard.definition)}</div>
+      <div class="example-row">
+        <span class="example-text">"${esc(pendingCard.example)}"</span>
+        <button class="audio-btn" onclick="speak('${esc(pendingCard.example).replace(/'/g,"\\'")}','en')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>
+        </button>
+      </div>
+    </div>`;
+  document.getElementById('save-actions').style.display='flex';
 }
 function showAddError(msg){
   document.getElementById('add-error').style.display='';
@@ -946,6 +992,23 @@ function speak(text,lang='en'){
 }
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ══════════════════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════════════════
+function showToast(msg){
+  if(window.Android&&typeof Android.showToast==='function'){Android.showToast(msg);return;}
+  let t=document.getElementById('lexo-toast');
+  if(!t){
+    t=document.createElement('div');t.id='lexo-toast';
+    t.style.cssText='position:fixed;bottom:calc(80px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(10px);background:#1e2433;border:0.5px solid var(--border);color:var(--text);font-size:13px;padding:9px 18px;border-radius:20px;z-index:200;opacity:0;transition:opacity .2s,transform .2s;white-space:nowrap;pointer-events:none;';
+    document.body.appendChild(t);
+  }
+  t.textContent=msg;
+  t.style.opacity='1';t.style.transform='translateX(-50%) translateY(0)';
+  clearTimeout(t._tid);
+  t._tid=setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(-50%) translateY(10px)';},2200);
+}
 
 // ══════════════════════════════════════════════════
 //  EVENTS & BOOT
