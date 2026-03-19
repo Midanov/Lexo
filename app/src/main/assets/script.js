@@ -9,7 +9,7 @@ const CAT_NAMES  = ['','Daily','Technology','Business','Finance','Travel',
                     'Food','Health','Science','Arts','Education','Nature','Society'];
 const CAT_LABELS = ['','Cotidiano','Tecnología','Negocios','Finanzas','Viajes',
                     'Comida','Salud','Ciencia','Arte','Educación','Naturaleza','Sociedad'];
-
+const SCREEN_ORDER = ['home','study','game','vocab','explore'];
 // ══════════════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════════════
@@ -255,13 +255,50 @@ function persist(){
 //  NAVIGATION
 // ══════════════════════════════════════════════════
 function showScreen(name){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById('screen-'+name).classList.add('active');
+  const current = document.querySelector('.screen.active');
+  const next = document.getElementById('screen-' + name);
+
+  if(!current || current === next) return;
+  const fab = document.getElementById('fab');
+  if(name === 'vocab' || name === 'explore'){
+    fab.style.display = 'flex';
+  } else {
+    fab.style.display = 'none';
+  }
+  // lógica existente (no la rompemos)
   if(name==='home')  refreshHome();
   if(name==='vocab') renderVocab();
   if(name==='study') initStudyScreen();
   if(name==='game')  initGameSetup();
   if(name==='explore') renderExplore();
+
+  // detectar dirección
+  const currentName = current.id.replace('screen-','');
+  const currentIndex = SCREEN_ORDER.indexOf(currentName);
+  const nextIndex = SCREEN_ORDER.indexOf(name);
+
+  const goingForward = nextIndex > currentIndex;
+
+  // animación de salida
+  current.classList.remove('active');
+  current.classList.add(goingForward ? 'exit-left' : 'exit-right');
+
+  // animación de entrada
+  requestAnimationFrame(()=>{
+    next.classList.add('active');
+  });
+
+  // limpiar clases después de la animación
+  setTimeout(()=>{
+    current.classList.remove('exit-left','exit-right');
+  }, 300);
+  // actualizar botones activos
+  document.querySelectorAll('.nav-btn').forEach(btn=>{
+    btn.classList.remove('active');
+  });
+
+  document.querySelector(`.nav-btn[onclick="showScreen('${name}')"]`)
+    ?.classList.add('active');
 }
 
 // ══════════════════════════════════════════════════
@@ -434,6 +471,10 @@ function renderFlashcard(){
     <div class="tiny" style="margin-top:4px;">Vista ${w.apps||0} ${(w.apps||0)===1?'vez':'veces'}</div>
   </div>`;
   document.getElementById('flash-content').innerHTML=html;
+  const fc = document.getElementById('flash-content');
+  fc.classList.remove('flashcard-enter');
+  void fc.offsetWidth; // reflow → reinicia animación
+  fc.classList.add('flashcard-enter');
   document.getElementById('flash-content').scrollTop=0;
   loadImageInto(w.word,'flash-img-wrap','flash-img');
 }
@@ -743,7 +784,7 @@ async function renderExplore(){
         <div class="sug-word-meta">${entry.p==='v'?'verbo':entry.p==='n'?'sustantivo':entry.p==='a'?'adjetivo':entry.p==='d'?'adverbio':'palabra'}</div>
       </div>
       <button class="sug-add-btn ${isAdded?'done':'add'}"
-        onclick="addSuggestedWord('${esc(entry.w)}')"
+        onclick="handleAddWord(this, '${esc(entry.w)}')"
         ${isAdded?'disabled':''}>${isAdded?'✓':'+'}</button>
     </div>`;
   }).join('');
@@ -757,6 +798,38 @@ async function renderExplore(){
 
   const list = document.getElementById('explore-list');
   list.innerHTML = statsHtml + (listHtml || '<div class="empty">Sin resultados para este filtro.</div>') + moreHtml;
+}
+function handleAddWord(btn, word){
+  // 1. Guardar palabra
+  addSuggestedWord(word);
+
+  const card = btn.closest('.sug-word-card');
+
+  // 2. Feedback inmediato en botón
+  btn.textContent = '✓';
+  btn.classList.remove('add');
+  btn.classList.add('done');
+
+  // 3. Feedback visual en tarjeta
+  card.classList.add('added');
+
+  // 4. Animación "pop"
+  card.style.transform = 'scale(1.03)';
+  setTimeout(()=>{
+    card.style.transform = 'scale(1)';
+  }, 120);
+
+  // 5. Desaparecer suavemente
+  setTimeout(()=>{
+    card.style.transition = 'all .25s ease';
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(-10px)';
+  }, 200);
+
+  // 6. Eliminar del DOM
+  setTimeout(()=>{
+    card.remove();
+  }, 450);
 }
 
 function addSuggestedWord(wordStr){
