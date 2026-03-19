@@ -28,7 +28,19 @@ class MainActivity : AppCompatActivity() {
 
         val webView = WebView(this)
         setContentView(webView)
+        window.setDecorFitsSystemWindows(false)
 
+        webView.post {
+            window.insetsController?.let { controller ->
+                controller.hide(
+                    android.view.WindowInsets.Type.statusBars() or
+                            android.view.WindowInsets.Type.navigationBars()
+                )
+
+                controller.systemBarsBehavior =
+                    android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+        }
         // ── Configuración WebView ──────────────────────────────
         webView.settings.apply {
             javaScriptEnabled = true

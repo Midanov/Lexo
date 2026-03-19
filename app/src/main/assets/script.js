@@ -173,7 +173,10 @@ async function loadImageInto(word,wrapId,imgId){
   if(!url)return;
   const wrap=document.getElementById(wrapId);
   const img=document.getElementById(imgId);
-  if(wrap&&img){img.src=url;img.onerror=()=>{wrap.style.display='none';};wrap.style.display='block';}
+  if(wrap&&img){img.src=url;img.style.width = '200px';
+                              img.style.height = '200px';
+                              img.style.objectFit = 'cover';  img.style.display = 'block';
+                                                              img.style.margin = '0 auto';img.onerror=()=>{wrap.style.display='none';};wrap.style.display='block';}
 }
 
 async function loadLibrary(idb){
@@ -186,7 +189,15 @@ async function loadLibrary(idb){
     if(!res.ok)throw new Error('HTTP '+res.status);
     const raw=await res.json();
     // raw is array of arrays: [word,translation,level,pos,cat]
-    const rows=raw.map(r=>({w:r[0],t:r[1],l:r[2],p:r[3],c:r[4]}));
+    const rows = raw.map(r => ({
+      w: r[0],
+      t: r[1],
+      l: r[2],
+      p: r[3],
+      c: r[4],
+      d: r[5] || '',   // definition
+      e: r[6] || ''    // example
+    }));
     await idbPutAll(idb,rows);
     LIB=rows;
   }catch(err){
@@ -754,7 +765,7 @@ function addSuggestedWord(wordStr){
   db.words.push({
     id: Date.now().toString()+Math.random().toString(36).slice(2),
     word: entry.w, translation: entry.t,
-    definition: '', ipa: '', example: '',
+    definition:entry.d, ipa: '', example: entry.e,
     partOfSpeech: entry.p==='v'?'verb':entry.p==='n'?'noun':entry.p==='a'?'adjective':entry.p==='d'?'adverb':'word',
     cefr: CEFR_CODES[entry.l], freq: estimateFreq(entry.w),
     category: CAT_NAMES[entry.c],
