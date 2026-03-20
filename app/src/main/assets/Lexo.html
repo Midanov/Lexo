@@ -400,7 +400,9 @@ label:first-child{margin-top:0}
     <div style="padding-top:2px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-start;">
       <div>
         <h2>Explorar</h2>
-        <p class="muted" style="font-size:11px;margin-top:2px;">1,084 palabras · A1 a C2 · Toca <strong style="color:var(--amber)">+</strong> para agregar</p>
+          <p id="word-count" class="muted" style="font-size:11px;margin-top:2px;">
+              0 palabras · A1 a C2 · Toca <strong style="color:var(--amber)">+</strong> para agregar
+          </p>
       </div>
     </div>
     <input type="text" id="explore-search" placeholder="Buscar por palabra o traducción..." oninput="explorePage=0;renderExplore()" style="margin-bottom:0;">
@@ -417,17 +419,11 @@ label:first-child{margin-top:0}
   <div class="vtab-row" id="explore-cat-tabs" style="padding-top:0;padding-bottom:4px;">
     <button class="vtab active" onclick="setExploreCat('all',this)">Todos temas</button>
     <button class="vtab" onclick="setExploreCat('Daily',this)">Cotidiano</button>
-    <button class="vtab" onclick="setExploreCat('Business',this)">Negocios</button>
-    <button class="vtab" onclick="setExploreCat('Technology',this)">Tecnología</button>
+      <button class="vtab" onclick="setExploreCat('Technology',this)">Tecnología</button>
+      <button class="vtab" onclick="setExploreCat('Business',this)">Negocios</button>
     <button class="vtab" onclick="setExploreCat('Finance',this)">Finanzas</button>
-    <button class="vtab" onclick="setExploreCat('Health',this)">Salud</button>
-    <button class="vtab" onclick="setExploreCat('Science',this)">Ciencia</button>
-    <button class="vtab" onclick="setExploreCat('Education',this)">Educación</button>
     <button class="vtab" onclick="setExploreCat('Travel',this)">Viajes</button>
     <button class="vtab" onclick="setExploreCat('Food',this)">Comida</button>
-    <button class="vtab" onclick="setExploreCat('Arts',this)">Arte</button>
-    <button class="vtab" onclick="setExploreCat('Nature',this)">Naturaleza</button>
-    <button class="vtab" onclick="setExploreCat('Society',this)">Sociedad</button>
   </div>
   <div class="scroll" style="padding-top:2px;" id="explore-list"></div>
 </div>

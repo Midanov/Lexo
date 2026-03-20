@@ -180,14 +180,26 @@ async function loadImageInto(word,wrapId,imgId){
 }
 
 async function loadLibrary(idb){
-  const count=await idbCount(idb);
-  if(count>0){LIB=await idbGetAll(idb);LIB_READY=true;return;}
+  const count = await idbCount(idb);
+
+  if(count > 0){
+    LIB = await idbGetAll(idb);
+    LIB_READY = true;
+
+    updateWordCount(); // ✅ actualizar contador desde IndexedDB
+
+    return;
+  }
+
   // First run: load words.json
   showLoadingScreen('Cargando vocabulario… (solo la primera vez)');
+
   try{
-    const res=await fetchWithTimeout('words.json',{method:'GET'},20000);
-    if(!res.ok)throw new Error('HTTP '+res.status);
-    const raw=await res.json();
+    const res = await fetchWithTimeout('words.json',{method:'GET'},20000);
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+
+    const raw = await res.json();
+
     // raw is array of arrays: [word,translation,level,pos,cat]
     const rows = raw.map(r => ({
       w: r[0],
@@ -198,14 +210,26 @@ async function loadLibrary(idb){
       d: r[5] || '',   // definition
       e: r[6] || ''    // example
     }));
-    await idbPutAll(idb,rows);
-    LIB=rows;
-  }catch(err){
-    console.warn('words.json load failed:',err.message);
-    LIB=[];
+
+    await idbPutAll(idb, rows);
+    LIB = rows;
+
+  } catch(err){
+    console.warn('words.json load failed:', err.message);
+    LIB = [];
   }
-  LIB_READY=true;
+
+  LIB_READY = true;
   hideLoadingScreen();
+
+  updateWordCount(); // ✅ actualizar contador después de cargar JSON
+}
+
+function updateWordCount() {
+  const el = document.getElementById('word-count');
+  if (!el) return;
+
+  el.innerHTML = `${LIB.length.toLocaleString()} palabras · A1 a C2 · Toca <strong style="color:var(--amber)">+</strong> para agregar`;
 }
 
 function showLoadingScreen(msg){
