@@ -1,0 +1,37 @@
+<div class="screen" id="screen-vocab">
+  <div style="padding:12px 16px 4px;flex-shrink:0;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-top:2px;">
+      <h2>Mi vocabulario</h2>
+      <span class="muted" id="vocab-count" style="font-size:12px;"></span>
+    </div>
+    <input type="text" id="vocab-search" placeholder="Buscar..." oninput="renderVocab()" style="margin-bottom:8px;">
+  </div>
+  <div class="vtab-row">
+    <button class="vtab active" onclick="setVocabTab('status','all',this)">Todas</button>
+    <button class="vtab" onclick="setVocabTab('status','new',this)">Nuevas</button>
+    <button class="vtab" onclick="setVocabTab('status','hard',this)">Difíciles</button>
+    <button class="vtab" onclick="setVocabTab('status','review',this)">Revisión</button>
+    <button class="vtab" onclick="setVocabTab('status','mastered',this)">Dominadas</button>
+  </div>
+  <div class="vtab-row" style="padding-top:0;">
+    <button class="vtab active" onclick="setVocabTab('cefr','all',this)">Todos</button>
+    <button class="vtab" onclick="setVocabTab('cefr','A1',this)">A1</button>
+    <button class="vtab" onclick="setVocabTab('cefr','A2',this)">A2</button>
+    <button class="vtab" onclick="setVocabTab('cefr','B1',this)">B1</button>
+    <button class="vtab" onclick="setVocabTab('cefr','B2',this)">B2</button>
+    <button class="vtab" onclick="setVocabTab('cefr','C1',this)">C1</button>
+    <button class="vtab" onclick="setVocabTab('cefr','C2',this)">C2</button>
+  </div>
+  <div class="vtab-row" style="padding-top:0;padding-bottom:4px;">
+    <button class="vtab active" onclick="setVocabTab('cat','all',this)">Todos temas</button>
+    <button class="vtab" onclick="setVocabTab('cat','Technology',this)">Tecnología</button>
+    <button class="vtab" onclick="setVocabTab('cat','Business',this)">Negocios</button>
+    <button class="vtab" onclick="setVocabTab('cat','Travel',this)">Viajes</button>
+    <button class="vtab" onclick="setVocabTab('cat','Food',this)">Comida</button>
+    <button class="vtab" onclick="setVocabTab('cat','Health',this)">Salud</button>
+    <button class="vtab" onclick="setVocabTab('cat','Finance',this)">Finanzas</button>
+    <button class="vtab" onclick="setVocabTab('cat','Daily',this)">Cotidiano</button>
+    <button class="vtab" onclick="setVocabTab('cat','Science',this)">Ciencia</button>
+  </div>
+  <div class="scroll" style="padding-top:4px;" id="vocab-list"></div>
+</div>

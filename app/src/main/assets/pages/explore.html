@@ -1,0 +1,32 @@
+<div class="screen" id="screen-explore">
+  <div style="padding:10px 16px 4px;flex-shrink:0;">
+    <div style="padding-top:2px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <h2>Explorar</h2>
+        <p id="word-count" class="muted" style="font-size:11px;margin-top:2px;">
+          0 palabras · A1 a C2 · Toca <strong style="color:var(--amber)">+</strong> para agregar
+        </p>
+      </div>
+    </div>
+    <input type="text" id="explore-search" placeholder="Buscar por palabra o traducción..." oninput="explorePage=0;renderExplore()" style="margin-bottom:0;">
+  </div>
+  <div class="vtab-row" id="explore-tabs" style="padding-top:6px;">
+    <button class="vtab active" onclick="setExploreLevel('all',this)">Todos niveles</button>
+    <button class="vtab" onclick="setExploreLevel('A1',this)">A1</button>
+    <button class="vtab" onclick="setExploreLevel('A2',this)">A2</button>
+    <button class="vtab" onclick="setExploreLevel('B1',this)">B1</button>
+    <button class="vtab" onclick="setExploreLevel('B2',this)">B2</button>
+    <button class="vtab" onclick="setExploreLevel('C1',this)">C1</button>
+    <button class="vtab" onclick="setExploreLevel('C2',this)">C2</button>
+  </div>
+  <div class="vtab-row" id="explore-cat-tabs" style="padding-top:0;padding-bottom:4px;">
+    <button class="vtab active" onclick="setExploreCat('all',this)">Todos temas</button>
+    <button class="vtab" onclick="setExploreCat('Daily',this)">Cotidiano</button>
+    <button class="vtab" onclick="setExploreCat('Technology',this)">Tecnología</button>
+    <button class="vtab" onclick="setExploreCat('Business',this)">Negocios</button>
+    <button class="vtab" onclick="setExploreCat('Finance',this)">Finanzas</button>
+    <button class="vtab" onclick="setExploreCat('Travel',this)">Viajes</button>
+    <button class="vtab" onclick="setExploreCat('Food',this)">Comida</button>
+  </div>
+  <div class="scroll" style="padding-top:2px;" id="explore-list"></div>
+</div>

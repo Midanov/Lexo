@@ -1,0 +1,25 @@
+/* ═══════════════════════════════════════════════════
+   LEXO — Home screen styles
+   ═══════════════════════════════════════════════════ */
+
+/* CEFR progress */
+.cefr-progress-card {
+  background: var(--bg3);
+  border-radius: 14px;
+  padding: 11px 13px;
+  margin-bottom: 8px;
+  border: 0.5px solid var(--border);
+}
+
+.cefr-prog-bar {
+  height: 4px;
+  border-radius: 3px;
+  background: var(--border);
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.cefr-prog-fill {
+  height: 100%;
+  border-radius: 3px;
+}

@@ -1,0 +1,66 @@
+<!-- ── FAB ── -->
+<button class="fab" id="fab" onclick="openAddWord()">+</button>
+
+<!-- ── ADD WORD MODAL ── -->
+<div class="overlay" id="add-overlay">
+  <div class="modal">
+    <div class="handle"></div>
+    <h3 style="margin-bottom:12px;">Agregar palabra</h3>
+    <label>Palabra en inglés</label>
+    <input type="text" id="new-word" placeholder="ej: resilience" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    <label>Tema / Categoría</label>
+    <select id="new-cat">
+      <option value="General">General</option>
+      <option value="Technology">Tecnología</option>
+      <option value="Business">Negocios</option>
+      <option value="Finance">Finanzas</option>
+      <option value="Travel">Viajes</option>
+      <option value="Food">Comida</option>
+      <option value="Health">Salud</option>
+      <option value="Science">Ciencia</option>
+      <option value="Arts">Arte / Cultura</option>
+      <option value="Daily">Cotidiano</option>
+    </select>
+    <label>Contexto donde la encontraste (opcional)</label>
+    <textarea id="new-ctx" placeholder="ej: She showed great resilience after the setback."></textarea>
+    <div id="add-loading" style="display:none;text-align:center;padding:18px 0;">
+      <div class="spinner"></div>
+      <div class="muted" style="margin-top:8px;font-size:13px;">Buscando en el diccionario…</div>
+    </div>
+    <div id="add-preview" style="display:none;margin-top:10px;"></div>
+    <div id="add-error" style="display:none;color:#F0997B;font-size:13px;padding:8px 0;line-height:1.6;"></div>
+    <div style="display:flex;gap:8px;margin-top:12px;" id="add-actions">
+      <button class="btn btn-secondary" onclick="closeAddModal()" style="flex:1;">Cancelar</button>
+      <button class="btn btn-primary" onclick="generateCard()" style="flex:1;">Buscar →</button>
+    </div>
+    <div style="display:none;gap:8px;margin-top:12px;" id="save-actions">
+      <button class="btn btn-secondary" onclick="resetAddModal()" style="flex:1;">← Atrás</button>
+      <button class="btn btn-primary" onclick="saveWord()" style="flex:1;">Guardar ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── WORD DETAIL MODAL ── -->
+<div class="overlay" id="detail-overlay">
+  <div class="modal" id="detail-body"></div>
+</div>
+
+<!-- ── SETTINGS MODAL ── -->
+<div class="overlay" id="settings-overlay">
+  <div class="modal">
+    <div class="handle"></div>
+    <h3 style="margin-bottom:4px;">Configuración</h3>
+    <p class="muted" style="font-size:12px;margin-bottom:14px;">100% gratuito · Sin claves de API</p>
+    <div class="card-sm" style="margin-bottom:14px;">
+      <div class="result-row"><span style="color:var(--text2);">Palabras guardadas</span><span id="s-words" style="font-weight:500;"></span></div>
+      <div class="result-row"><span style="color:var(--text2);">Sesiones</span><span id="s-sessions" style="font-weight:500;"></span></div>
+      <div class="result-row"><span style="color:var(--text2);">Racha actual</span><span id="s-streak" style="font-weight:500;"></span></div>
+      <div class="result-row"><span style="color:var(--text2);">Juegos completados</span><span id="s-games" style="font-weight:500;"></span></div>
+    </div>
+    <button class="btn btn-secondary" onclick="closeSettings()" style="margin-bottom:10px;">Cerrar</button>
+    <div style="border-top:0.5px solid var(--border);padding-top:12px;margin-top:4px;">
+      <p class="tiny" style="margin-bottom:8px;">Zona de peligro</p>
+      <button class="btn" style="background:#2d1515;border:0.5px solid #993C1D;color:#F0997B;" onclick="resetApp()">Borrar todos los datos</button>
+    </div>
+  </div>
+</div>

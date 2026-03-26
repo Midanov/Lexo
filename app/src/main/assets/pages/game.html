@@ -1,0 +1,64 @@
+<div class="screen" id="screen-game">
+  <div id="game-setup" style="display:flex;flex-direction:column;height:100%;">
+    <div class="scroll">
+      <div style="padding-top:4px;margin-bottom:14px;">
+        <h2>Juego diario</h2>
+        <div class="muted" id="game-eligible-count" style="margin-top:2px;font-size:12px;"></div>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:4px;">Dificultad</h3>
+        <div class="diff-grid" id="diff-selector">
+          <div class="diff-btn sel" onclick="setDiff('easy',this)">
+            <div class="diff-title" style="color:var(--teal-l);">Fácil</div>
+            <div class="diff-sub">Traducción · 15s</div>
+          </div>
+          <div class="diff-btn" onclick="setDiff('medium',this)">
+            <div class="diff-title" style="color:var(--amber-l);">Medio</div>
+            <div class="diff-sub">Significado · 10s</div>
+          </div>
+          <div class="diff-btn" onclick="setDiff('hard',this)">
+            <div class="diff-title" style="color:#F0997B;">Difícil</div>
+            <div class="diff-sub">Definición · 6s</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:10px;">Palabras por sesión</h3>
+        <div style="display:flex;gap:8px;">
+          <div id="mode-10" class="diff-btn sel" style="flex:1;" onclick="setMode(10,this)"><div class="diff-title">10</div><div class="diff-sub">~3 min</div></div>
+          <div id="mode-20" class="diff-btn" style="flex:1;" onclick="setMode(20,this)"><div class="diff-title">20</div><div class="diff-sub">~6 min</div></div>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="startGame()" id="game-start-btn">Comenzar juego →</button>
+      <div style="height:8px;"></div>
+    </div>
+  </div>
+  <div id="game-play" style="display:none;flex-direction:column;height:100%;min-height:0;">
+    <div style="padding:8px 16px 0;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+      <span class="tiny" id="gp-counter"></span>
+      <svg class="timer-svg" width="40" height="40" viewBox="0 0 40 40">
+        <circle class="timer-bg" cx="20" cy="20" r="16"/>
+        <circle class="timer-fg" id="timer-ring" cx="20" cy="20" r="16" stroke="var(--amber)" stroke-dasharray="100.5" stroke-dashoffset="0"/>
+        <text x="20" y="20" text-anchor="middle" dominant-baseline="central" font-size="10" font-weight="600" fill="var(--amber-l)" id="timer-txt">—</text>
+      </svg>
+      <span class="tiny" id="gp-score" style="color:var(--amber-l);font-weight:600;min-width:50px;text-align:right;"></span>
+    </div>
+    <div class="scroll" id="game-play-content" style="padding-top:6px;"></div>
+  </div>
+  <div id="game-results" style="display:none;flex-direction:column;height:100%;">
+    <div class="scroll">
+      <div style="padding-top:4px;margin-bottom:14px;"><h2>Resultados</h2><div class="muted" id="results-sub" style="margin-top:2px;font-size:12px;"></div></div>
+      <div class="stats" style="margin-bottom:14px;">
+        <div class="stat"><div class="stat-n" style="color:var(--teal-l)" id="res-correct">0</div><div class="stat-l">Correctas</div></div>
+        <div class="stat"><div class="stat-n" style="color:var(--amber-l)" id="res-score">0</div><div class="stat-l">Puntos</div></div>
+        <div class="stat"><div class="stat-n" style="color:var(--blue-l)" id="res-avgtime">0s</div><div class="stat-l">Tiempo prom.</div></div>
+      </div>
+      <div class="card"><h3 style="margin-bottom:10px;">Detalle</h3><div id="results-detail"></div></div>
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <button class="btn btn-secondary" style="flex:1;" onclick="showGameView('setup')">Nueva sesión</button>
+        <button class="btn btn-primary" style="flex:1;" onclick="showScreen('home')">Inicio</button>
+      </div>
+      <div style="height:8px;"></div>
+    </div>
+  </div>
+</div>

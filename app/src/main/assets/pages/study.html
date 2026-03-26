@@ -1,0 +1,33 @@
+<div class="screen" id="screen-study">
+  <div id="study-session" style="display:flex;flex-direction:column;height:100%;min-height:0;">
+    <div class="progress-bar" id="study-prog"></div>
+    <div style="display:flex;justify-content:space-between;padding:5px 16px 0;flex-shrink:0;">
+      <span class="tiny" id="study-counter">0 / 0</span>
+      <span class="tiny" id="study-hint-lbl"></span>
+    </div>
+    <div class="scroll" id="flash-content" style="padding-bottom:4px;"></div>
+    <div class="rating">
+      <button class="rate-btn rate-1" onclick="rate(1)">✕<br><span style="font-size:10px;">Olvidé</span></button>
+      <button class="rate-btn rate-2" onclick="rate(2)">~<br><span style="font-size:10px;">Difícil</span></button>
+      <button class="rate-btn rate-3" onclick="rate(3)">✓<br><span style="font-size:10px;">Bien</span></button>
+      <button class="rate-btn rate-4" onclick="rate(4)">★<br><span style="font-size:10px;">Fácil</span></button>
+    </div>
+  </div>
+  <div id="study-complete" style="display:none;flex-direction:column;height:100%;">
+    <div class="center-view">
+      <div class="big-icon">🎉</div>
+      <h2 style="margin-bottom:8px;">¡Sesión completada!</h2>
+      <p class="muted" id="complete-msg" style="margin-bottom:24px;line-height:1.7;"></p>
+      <button class="btn btn-primary" style="margin-bottom:10px;" onclick="showScreen('home')">Inicio</button>
+      <button class="btn btn-secondary" onclick="startStudy()">Otra sesión</button>
+    </div>
+  </div>
+  <div id="study-empty" style="display:none;flex-direction:column;height:100%;">
+    <div class="center-view">
+      <div class="big-icon">✨</div>
+      <h2 style="margin-bottom:8px;">Todo al día</h2>
+      <p class="muted" id="empty-msg" style="margin-bottom:24px;"></p>
+      <button class="btn btn-primary" onclick="showScreen('home')">Volver al inicio</button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,37 @@
+/* ═══════════════════════════════════════════════════
+   LEXO — Vocabulary screen styles
+   ═══════════════════════════════════════════════════ */
+
+/* Word rows in list */
+.word-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 0;
+  border-bottom: 0.5px solid var(--border);
+  cursor: pointer;
+}
+
+.word-row:last-child { border-bottom: none; }
+
+.word-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Filter chips */
+.filter-chip {
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 0.5px solid;
+  background: transparent;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all .15s;
+  white-space: nowrap;
+}
+
+.tag-row { display: flex; flex-wrap: wrap; gap: 6px; }

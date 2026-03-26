@@ -1,0 +1,66 @@
+/* ═══════════════════════════════════════════════════
+   LEXO — Game screen styles
+   ═══════════════════════════════════════════════════ */
+
+/* Difficulty selector */
+.diff-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.diff-btn {
+  padding: 12px 6px;
+  border-radius: 14px;
+  border: 0.5px solid var(--border);
+  background: var(--bg3);
+  cursor: pointer;
+  text-align: center;
+  transition: all .15s;
+  font-family: var(--font);
+}
+
+.diff-btn.sel { border-color: var(--amber-d); background: #2a1e08; }
+
+.diff-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.diff-sub   { font-size: 10px; color: var(--text2); margin-top: 3px; line-height: 1.4; }
+
+/* Timer ring */
+.timer-svg { transform: rotate(-90deg); }
+.timer-bg  { fill: none; stroke: var(--border); stroke-width: 3.5; }
+.timer-fg  { fill: none; stroke-width: 3.5; stroke-linecap: round; }
+
+/* Game word */
+.game-word-big {
+  font-size: 40px;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: -1px;
+}
+
+/* Multiple choice */
+.choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.choice {
+  background: var(--bg3);
+  border: 0.5px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.4;
+  transition: border-color .1s, background .1s;
+  font-family: var(--font);
+}
+
+.choice.correct { background: #0d2018; border-color: var(--teal);  color: var(--teal-l); }
+.choice.wrong   { background: #1f0e0e; border-color: var(--red);   color: #F0997B; }
+.choice:active:not(.correct):not(.wrong) { opacity: .8; }

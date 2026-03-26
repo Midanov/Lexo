@@ -63,14 +63,11 @@ class MainActivity : AppCompatActivity() {
             .build()
 
         webView.webViewClient = object : WebViewClientCompat() {
-            override fun shouldInterceptRequest(
-                view: WebView,
-                request: WebResourceRequest
-            ) = assetLoader.shouldInterceptRequest(request.url)
+            override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest) =
+                assetLoader.shouldInterceptRequest(request.url)
         }
 
-        // ── Cargar app ─────────────────────────────────────────
-        webView.loadUrl("https://appassets.androidplatform.net/assets/Lexo.html")
+        webView.loadUrl("https://appassets.androidplatform.net/assets/index.html")
 
         // ── Pedir permiso Android 13+ ──────────────────────────
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
